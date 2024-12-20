@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Bunjang 商品資訊抓取</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #FF0000;  /* 紅色 */
+            --secondary-color: #000000;  /* 黑色 */
+            --background-color: #F5F5F5;
+            --text-color: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 10px;
+        }
+
+        .search-section {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        #product-url {
+            flex-grow: 1;
+            padding: 10px;
+            border: 2px solid var(--primary-color);
+            margin-right: 10px;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        #error-message {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .product-detail {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .product-detail label {
+            width: 180px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .product-detail .value {
+            flex-grow: 1;
+            color: var(--secondary-color);
+        }
+
+        #product-image {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            margin-bottom: 20px;
+            border: 2px solid var(--primary-color);
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 10px;
+            }
+
+            .product-detail {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .product-detail label {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Bunjang 商品資訊抓取</h1>
+        </div>
+        
+        <div class="search-section">
+            <input type="text" id="product-url" placeholder="請輸入 Bunjang 商品網址">
+            <button class="btn" onclick="fetchProductInfo()">抓取商品資訊</button>
+            <div class="form-check form-switch" style="margin-left: 10px; display: inline-block;">
+                <input class="form-check-input" type="checkbox" id="aiTranslationSwitch">
+                <label class="form-check-label" for="aiTranslationSwitch">啟用AI翻譯</label>
+            </div>
+        </div>
+
+        <div id="error-message"></div>
+
+        <div id="product-info">
+            <div id="product-image">待載入</div>
+
+            <div class="product-detail">
+                <label>商品韓文名稱</label>
+                <span id="product-korean-name" class="value">-</span>
+            </div>
+
+            <div class="product-detail">
+                <label>商品敘述</label>
+                <span id="product-description" class="value">-</span>
+            </div>
+
+            <div class="product-detail">
+                <label>商品售價(韓元)</label>
+                <span id="product-price" class="value">-</span>
+            </div>
+
+            <div class="product-detail">
+                <label>商品售價(台幣)</label>
+                <span id="product-price-twd" class="value">-</span>
+            </div>
+
+            <div class="product-detail">
+                <label>惡魔代購價(台幣)</label>
+                <span id="product-price-agent" class="value">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function normalizeUrl(url) {
+            // 檢查是否是 globalbunjang.com 的網址
+            const globalBunjangRegex = /^https?:\/\/(?:www\.)?globalbunjang\.com\/product\/(\d+)/i;
+            const match = url.match(globalBunjangRegex);
+            
+            if (match) {
+                // 如果是 globalbunjang.com，轉換為 m.bunjang.co.kr 的格式
+                return `https://m.bunjang.co.kr/products/${match[1]}`;
+            }
+            
+            // 如果不是 globalbunjang.com，直接返回原始 URL
+            return url;
+        }
+
+        async function fetchProductInfo() {
+            let url = document.getElementById('product-url').value;
+            const errorMessage = document.getElementById('error-message');
+            const productImage = document.getElementById('product-image');
+            const productKoreanName = document.getElementById('product-korean-name');
+            const productDescription = document.getElementById('product-description');
+            const productPrice = document.getElementById('product-price');
+            const productPriceTWD = document.getElementById('product-price-twd');
+            const productPriceAgent = document.getElementById('product-price-agent');
+
+            // 標準化 URL
+            url = normalizeUrl(url);
+            // 更新輸入框中的 URL
+            document.getElementById('product-url').value = url;
+
+            // 清除之前的資訊和錯誤
+            errorMessage.textContent = '';
+            productImage.textContent = '待載入';
+            productKoreanName.textContent = '-';
+            productDescription.textContent = '-';
+            productPrice.textContent = '-';
+            productPriceTWD.textContent = '-';
+            productPriceAgent.textContent = '-';
+
+            try {
+                const response = await fetch('/scrape', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    productImage.innerHTML = data.image 
+                        ? `<img src="${data.image}" alt="商品圖片" style="max-width: 100%; max-height: 400px; object-fit: contain;">`
+                        : '無圖片';
+                    
+                    productKoreanName.textContent = data.korean_name || '-';
+                    productDescription.textContent = data.description || '無商品描述';
+                    
+                    const price = parseFloat(data.price);
+                    productPrice.textContent = `${data.price} ${data.currency}`;
+                    productPriceTWD.innerHTML = `${(price * 0.025).toFixed(2)} 台幣 <small style="color: #888; font-size: 0.8em;">(＝韓元*0.025)</small>`; 
+                    productPriceAgent.innerHTML = `${(price / 31.5).toFixed(2)} 台幣<br><small style="color: #888; font-size: 0.8em;">(＝韓元/31.5含國際運費、未確認韓國國內運費，僅為估算實際請按惡魔代購報價)</small>`;
+                } else {
+                    errorMessage.textContent = data.error || '抓取資訊時發生錯誤';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.textContent = '抓取資訊時發生錯誤。請檢查網址是否正確，或稍後再試。';
+            }
+        }
+    </script>
+    <footer style="text-align: center; color: #333; font-size: 0.8em; margin-top: 20px; padding: 10px; background-color: #f4f4f4;">
+        本商品資料擷取網頁由 <a href="https://www.plurk.com/avaritia_the_demon" target="_blank" style="color: #333; text-decoration: underline;">惡魔代購 Avaritia_the_demon @ Plurk</a> 製作，有代購需求歡迎聯繫。
+    </footer>
+</body>
+</html>
