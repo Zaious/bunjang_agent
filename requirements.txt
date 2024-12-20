@@ -5,3 +5,5 @@ beautifulsoup4==4.11.2
 webdriver-manager==3.8.6
 Werkzeug==2.1.2
 gunicorn  
+selenium
+chromedriver-autoinstaller
