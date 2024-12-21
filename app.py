@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import json
 import os
 import chromedriver_autoinstaller
+from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 
 
@@ -27,25 +28,13 @@ chrome_options.add_argument("--disable-dev-shm-usage")  # 避免共享內存問�
 driver = webdriver.Chrome(service=Service(), options=chrome_options)
 
 def setup_driver():
-    # 自動安裝 ChromeDriver
     chromedriver_autoinstaller.install()
-    
-    # 配置 Chrome 選項
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")  # 無頭模式
-    options.add_argument("--disable-gpu")
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--remote-debugging-port=9222")
-
-    # 設置 Chrome binary 路徑（如果必要）
-    chrome_path = "/usr/bin/google-chrome"
-    if os.path.exists(chrome_path):
-        options.binary_location = chrome_path
-
-    # 啟動 WebDriver
-    return webdriver.Chrome(options=options)
+    options.add_argument("--disable-gpu")
+    return webdriver.Chrome(service=Service(), options=options)
 
 def is_good_name(name):
     """
