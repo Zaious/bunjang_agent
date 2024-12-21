@@ -7,61 +7,30 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import json
 import os
-import chromedriver_autoinstaller
-from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-
-
+import chromedriver_autoinstaller
 
 app = Flask(__name__)
 CORS(app)  # 允許跨域請求
 
-# 自動安裝 ChromeDriver
-chromedriver_autoinstaller.install()
-# 設置 Chrome 選項
-chrome_options = Options()
-chrome_options.add_argument("--headless")  # 無頭模式
-chrome_options.add_argument("--no-sandbox")  # 解除沙盒限制
-chrome_options.add_argument("--disable-dev-shm-usage")  # 避免共享內存問題
-
 def setup_driver():
-    # 自動安裝 ChromeDriver
-    chromedriver_autoinstaller.install()
-    
-    # 配置 Chrome 選項
-    options = Options()
-    options.add_argument("--headless")  # 無頭模式
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    
-    # 返回 WebDriver 實例
-    return webdriver.Chrome(service=Service(), options=options)
+    try:
+        # 自動安裝 ChromeDriver 並返回其路徑
+        chromedriver_path = chromedriver_autoinstaller.install()
 
-def is_good_name(name):
-    """
-    判斷商品名稱是否具有足夠的資訊
-    
-    規則：
-    1. 長度在 5-100 字之間
-    2. 不是太通用的詞彙
-    3. 包含具體描述
-    """
-    if not name or len(name) < 5 or len(name) > 100:
-        return False
-    
-    # 排除一些通用或無意義的名稱
-    bad_keywords = [
-        'product', 'item', 'sale', 'wts', 'wtb', 'for sale', 
-        'bunjang', 'global', 'sign', 'album', 'photocard'
-    ]
-    
-    name_lower = name.lower()
-    if any(keyword in name_lower for keyword in bad_keywords):
-        return False
-    
-    return True
+        # 配置 Chrome 選項
+        options = Options()
+        options.add_argument("--headless")  # 無頭模式
+        options.add_argument("--no-sandbox")  # 避免沙盒限制
+        options.add_argument("--disable-dev-shm-usage")  # 避免共享內存問題
+        options.add_argument("--disable-gpu")  # 禁用 GPU（可選）
+
+        # 返回 WebDriver 實例
+        return webdriver.Chrome(service=Service(chromedriver_path), options=options)
+
+    except Exception as e:
+        raise RuntimeError(f"WebDriver 啟動失敗: {str(e)}")
 
 @app.route('/')
 def index():
@@ -70,7 +39,6 @@ def index():
 @app.route('/scrape', methods=['POST'])
 def scrape_product():
     url = request.json.get('url')
-    
     if not url:
         return jsonify({"error": "未提供網址"}), 400
 
@@ -90,15 +58,7 @@ def scrape_product():
 
         # 先從 alt 屬性提取韓文原文
         korean_title = None
-        
-        # 尋找具有特定特徵的圖片
-        img_tags = soup.find_all('img', {
-            'fetchpriority': 'high', 
-            'data-nimg': 'fill', 
-            'class': 'osrq1v4',
-            'alt': True
-        })
-        
+        img_tags = soup.find_all('img', {'fetchpriority': 'high', 'data-nimg': 'fill', 'class': 'osrq1v4', 'alt': True})
         if img_tags:
             korean_title = img_tags[0].get('alt')
 
@@ -128,7 +88,7 @@ def scrape_product():
                     return jsonify({
                         "image": image_url,
                         "name": name,
-                        "korean_name": korean_title or name,  # 如果沒找到特定圖片的 alt，則使用原始 name
+                        "korean_name": korean_title or name,
                         "description": description,
                         "price": price,
                         "currency": price_currency,
@@ -136,17 +96,26 @@ def scrape_product():
                     })
             except json.JSONDecodeError:
                 continue
-        
+
         return jsonify({"error": "未找到商品資訊"}), 404
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
     finally:
         if driver:
             driver.quit()
 
-print(f"PORT: {os.environ.get('PORT')}")
+def is_good_name(name):
+    if not name or len(name) < 5 or len(name) > 100:
+        return False
+
+    bad_keywords = ['product', 'item', 'sale', 'wts', 'wtb', 'for sale', 'bunjang', 'global', 'sign', 'album', 'photocard']
+    name_lower = name.lower()
+    if any(keyword in name_lower for keyword in bad_keywords):
+        return False
+    return True
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)  # 硬編碼端口號
+    port = int(os.environ.get("PORT", 8080))  # 支持環境變數
+    app.run(host="0.0.0.0", port=port)
