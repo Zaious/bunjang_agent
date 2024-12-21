@@ -19,16 +19,18 @@ def setup_driver():
         # 自動安裝 ChromeDriver 並返回其路徑
         chromedriver_path = chromedriver_autoinstaller.install()
 
-        # 配置 Chrome 選項
+        # 設置 Chrome 選項
         options = Options()
         options.add_argument("--headless")  # 無頭模式
         options.add_argument("--no-sandbox")  # 避免沙盒限制
         options.add_argument("--disable-dev-shm-usage")  # 避免共享內存問題
         options.add_argument("--disable-gpu")  # 禁用 GPU（可選）
+        
+        # 指定 Chrome 二進制文件的路徑
+        options.binary_location = "/usr/bin/google-chrome"
 
-        # 返回 WebDriver 實例
+        # 創建 WebDriver 實例
         return webdriver.Chrome(service=Service(chromedriver_path), options=options)
-
     except Exception as e:
         raise RuntimeError(f"WebDriver 啟動失敗: {str(e)}")
 
