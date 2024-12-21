@@ -18,15 +18,15 @@ def setup_driver():
     try:
         # 自動安裝 ChromeDriver 並返回其路徑
         chromedriver_path = chromedriver_autoinstaller.install()
-
+        print(f"Chrome binary exists: {os.path.exists('/usr/bin/google-chrome')}")
         # 設置 Chrome 選項
         options = Options()
         options.add_argument("--headless")  # 無頭模式
         options.add_argument("--no-sandbox")  # 避免沙盒限制
         options.add_argument("--disable-dev-shm-usage")  # 避免共享內存問題
         options.add_argument("--disable-gpu")  # 禁用 GPU（可選）
-        
-        # 指定 Chrome 二進制文件的路徑
+
+        # 指定 Google Chrome 的二進制路徑
         options.binary_location = "/usr/bin/google-chrome"
 
         # 創建 WebDriver 實例
