@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app
 
 # 設置默認執行命令
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:$PORT"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8080"]
