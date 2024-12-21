@@ -143,7 +143,7 @@ def scrape_product():
         if driver:
             driver.quit()
 
-import os
+print(f"PORT: {os.environ.get('PORT')}")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # 默認使用 5000
