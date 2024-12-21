@@ -10,6 +10,7 @@ import os
 import chromedriver_autoinstaller
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 
 
 
@@ -24,16 +25,18 @@ chrome_options.add_argument("--headless")  # 無頭模式
 chrome_options.add_argument("--no-sandbox")  # 解除沙盒限制
 chrome_options.add_argument("--disable-dev-shm-usage")  # 避免共享內存問題
 
-# 啟動 Chrome
-driver = webdriver.Chrome(service=Service(), options=chrome_options)
-
 def setup_driver():
+    # 自動安裝 ChromeDriver
     chromedriver_autoinstaller.install()
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    
+    # 配置 Chrome 選項
+    options = Options()
+    options.add_argument("--headless")  # 無頭模式
+    options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
+    
+    # 返回 WebDriver 實例
     return webdriver.Chrome(service=Service(), options=options)
 
 def is_good_name(name):
