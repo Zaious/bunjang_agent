@@ -1,0 +1,8 @@
+services:
+  - name: bunjang-agent
+    type: web
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
